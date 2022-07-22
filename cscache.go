@@ -35,3 +35,13 @@ func (c *csCache) get(key string) (value ByteView, ok bool) {
 
 	return
 }
+
+func (c *csCache) delete(key string) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.lru == nil {
+		return false
+	}
+	ok := c.lru.Delete(key)
+	return ok
+}

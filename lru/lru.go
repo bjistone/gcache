@@ -1,6 +1,8 @@
 package lru
 
-import "container/list"
+import (
+	"container/list"
+)
 
 // Cache Cache为LRU缓存,并发访问是不安全的。
 type Cache struct {
@@ -27,10 +29,9 @@ type Value interface {
 // New 创造一个缓存。
 func New(maxCap int) *Cache {
 	return &Cache{
-		maxCap:    maxCap,
-		ll:        list.New(),
-		cache:     make(map[string]*list.Element),
-
+		maxCap: maxCap,
+		ll:     list.New(),
+		cache:  make(map[string]*list.Element),
 	}
 }
 
@@ -78,4 +79,14 @@ func (c *Cache) RemoveTail() {
 // Len 返回缓存k-v的个数。
 func (c *Cache) Len() int {
 	return c.ll.Len()
+}
+
+func (c *Cache) Delete(key string) bool {
+	var ele *list.Element
+	if ele = c.cache[key]; ele == nil {
+		return false
+	}
+	c.ll.Remove(ele)
+	delete(c.cache, key)
+	return true
 }

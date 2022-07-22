@@ -5,15 +5,15 @@ import (
 	"gcache"
 	"log"
 )
-var db = map[string]string{
-	"a":  "aa",
-	"b": "bb",
-	"c":  "cc",
-	"d":   "dd",
-	"e":   "ee",
-	"f":   "ff",
-}
 
+var db = map[string]string{
+	"a": "aa",
+	"b": "bb",
+	"c": "cc",
+	"d": "dd",
+	"e": "ee",
+	"f": "ff",
+}
 
 func simple() {
 	gc := gcache.NewCache(1<<5, gcache.GetterFunc(
@@ -36,4 +36,6 @@ func simple() {
 		fmt.Println(err)
 	}
 	fmt.Printf("key %s get value %s\n", "a", val.String())
+	fmt.Println(gc.Delete("a"))
+	gc.Get("a")
 }

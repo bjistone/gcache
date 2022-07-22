@@ -7,8 +7,8 @@ import (
 	"sync"
 )
 
-// Cache  是一个缓存空间，加载的关联数据分布在上面
-type Cache struct {
+// GCache  是一个缓存空间，加载的关联数据分布在上面
+type GCache struct {
 	//getter 当缓存找不到值的时候，就让用户决定去哪里找值
 	getter    Getter
 	mainCache csCache
@@ -35,13 +35,13 @@ var (
 )
 
 // NewCache 创建一个新的Group实例
-func NewCache(maxCap int, getter Getter) *Cache {
+func NewCache(maxCap int, getter Getter) *GCache {
 	if getter == nil {
 		panic("nil Getter")
 	}
 	mu.Lock()
 	defer mu.Unlock()
-	c := &Cache{
+	c := &GCache{
 		getter:    getter,
 		mainCache: csCache{maxCap: maxCap},
 		loader:    &singleflight.Ones{},
@@ -50,7 +50,7 @@ func NewCache(maxCap int, getter Getter) *Cache {
 }
 
 // Get 从缓存取值
-func (c *Cache) Get(key string) (ByteView, error) {
+func (c *GCache) Get(key string) (ByteView, error) {
 	if key == "" {
 		return ByteView{}, fmt.Errorf("key is required\n")
 	}
@@ -63,15 +63,22 @@ func (c *Cache) Get(key string) (ByteView, error) {
 	return c.load(key)
 }
 
+func (c *GCache) Delete(key string) bool {
+	if key == "" {
+		return false
+	}
+	return c.mainCache.delete(key)
+}
+
 // RegisterHTTPPool 注册一个PeerPicker用于选择远端对等体peer
-func (c *Cache) RegisterHTTPPool(peers PeerPicker) {
+func (c *GCache) RegisterHTTPPool(peers PeerPicker) {
 	if c.peers != nil {
 		panic("RegisterPeerPicker called more than once")
 	}
 	c.peers = peers
 }
 
-func (c *Cache) load(key string) (value ByteView, err error) {
+func (c *GCache) load(key string) (value ByteView, err error) {
 	//每个键只获取一次(本地或远程)
 	//不考虑并发调用的数量。
 	viewi, err := c.loader.Do(key, func() (interface{}, error) {
@@ -94,11 +101,11 @@ func (c *Cache) load(key string) (value ByteView, err error) {
 	return
 }
 
-func (c *Cache) populateCache(key string, value ByteView) {
+func (c *GCache) populateCache(key string, value ByteView) {
 	c.mainCache.add(key, value)
 }
 
-func (c *Cache) getLocally(key string) (ByteView, error) {
+func (c *GCache) getLocally(key string) (ByteView, error) {
 	bytes, err := c.getter.Get(key)
 	if err != nil {
 		return ByteView{}, err
@@ -109,7 +116,7 @@ func (c *Cache) getLocally(key string) (ByteView, error) {
 	return value, nil
 }
 
-func (c *Cache) getFromPeer(peer PeerGetter, key string) (ByteView, error) {
+func (c *GCache) getFromPeer(peer PeerGetter, key string) (ByteView, error) {
 	bytes, err := peer.Get(key)
 	if err != nil {
 		return ByteView{}, err
