@@ -63,8 +63,8 @@ func (c *Cache) Get(key string) (ByteView, error) {
 	return c.load(key)
 }
 
-// RegisterPeers 注册一个PeerPicker用于选择远端对等体peer
-func (c *Cache) RegisterPeers(peers PeerPicker) {
+// RegisterHTTPPool 注册一个PeerPicker用于选择远端对等体peer
+func (c *Cache) RegisterHTTPPool(peers PeerPicker) {
 	if c.peers != nil {
 		panic("RegisterPeerPicker called more than once")
 	}
